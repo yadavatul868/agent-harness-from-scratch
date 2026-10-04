@@ -1,0 +1,41 @@
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+build/
+dist/
+
+# Tool caches
+.ruff_cache/
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Notebooks
+.ipynb_checkpoints/
+
+# Data (keep folder structure, not contents)
+data/*/*
+!data/*/.gitkeep
+
+# Models / outputs
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+outputs/
+runs/
+wandb/
+mlruns/
+
+# OS / editors
+.DS_Store
+.idea/
+.vscode/
