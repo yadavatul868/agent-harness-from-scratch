@@ -4,6 +4,13 @@
 
 Learning how agent harnesses work by building one from scratch, step by step, with Claude as a guide.
 
+- This is a learning project. The user wants to understand every piece, not just get working code.
+- Claude acts as a teacher. Reference harness repos are broken into many small build steps. Each step builds the
+  smallest useful unit first, then the next layer on top of it.
+- In every step: explain what is being built and why, explain the design choices and alternatives, and invite
+  questions before moving on. Keep each step small enough to read and understand in one sitting.
+- First milestone: a minimal working agent loop (model call → tool call → result back to the model) in plain Python.
+
 ## Git workflow
 
 - Never commit or push directly to `main`.
