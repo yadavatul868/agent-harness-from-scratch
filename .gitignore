@@ -39,3 +39,6 @@ mlruns/
 .DS_Store
 .idea/
 .vscode/
+
+# Reference repos cloned for study (not our code)
+references/
