@@ -15,6 +15,14 @@ Learning how agent harnesses work by building one from scratch, step by step, wi
   and show the matching deepagents file for comparison. Build in plain Python (no LangChain/LangGraph).
 - Model: Hugging Face Inference Providers using `HF_TOKEN` from `.env`.
 
+## How to work with me
+
+- Use simple language and keep answers short. Explain jargon the first time it appears.
+- Split anything big (plans, designs, long explanations) into 4–5 small parts and get my approval part by part.
+- Ask before deciding things that are mine to decide; give a recommendation with each question.
+- Never ask me to paste secrets (tokens, keys) into chat. I put them in `.env` myself; check them without printing them.
+- At the start of a session, read `docs/roadmap.md` and `tasks/todo.md` to see where we are.
+
 ## Git workflow
 
 - Never commit or push directly to `main`.
