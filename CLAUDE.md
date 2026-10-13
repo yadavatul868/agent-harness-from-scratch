@@ -10,6 +10,10 @@ Learning how agent harnesses work by building one from scratch, step by step, wi
 - In every step: explain what is being built and why, explain the design choices and alternatives, and invite
   questions before moving on. Keep each step small enough to read and understand in one sitting.
 - First milestone: a minimal working agent loop (model call → tool call → result back to the model) in plain Python.
+- Reference repo: deepagents, cloned read-only in `references/deepagents/` (gitignored). Never edit it.
+- The step plan is `docs/roadmap.md` (9 layers, 100 steps). Work one step at a time, tick it off when done,
+  and show the matching deepagents file for comparison. Build in plain Python (no LangChain/LangGraph).
+- Model: Hugging Face Inference Providers using `HF_TOKEN` from `.env`.
 
 ## Git workflow
 
