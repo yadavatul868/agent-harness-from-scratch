@@ -2,6 +2,10 @@
 
 Learning how agent harnesses work by building one from scratch, step by step, with Claude as a guide.
 
+Rather than reading well-built harness repos, this project rebuilds one in small layers: the smallest unit first
+(a single agent loop), then the parts that sit on top of it (tools, memory, context management, and so on). Each
+step is built together with Claude, with the design choices explained and questioned along the way.
+
 ## Setup
 
 ```bash
