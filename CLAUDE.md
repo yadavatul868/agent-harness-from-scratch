@@ -11,9 +11,11 @@ Learning how agent harnesses work by building one from scratch, step by step, wi
   questions before moving on. Keep each step small enough to read and understand in one sitting.
 - First milestone: a minimal working agent loop (model call → tool call → result back to the model) in plain Python.
 - Reference repo: deepagents, cloned read-only in `references/deepagents/` (gitignored). Never edit it.
-- The step plan is `docs/roadmap.md` (9 layers, 100 steps). Work one step at a time, tick it off when done,
+  Second reference for the Layer 5 sandbox: `references/sandbox-runtime/` (Anthropic's, also read-only).
+- The step plan is `docs/roadmap.md` (10 layers, 112 steps, one optional). Work one step at a time, tick it off when done,
   and show the matching deepagents file for comparison. Build in plain Python (no LangChain/LangGraph).
-- Model: Hugging Face Inference Providers using `HF_TOKEN` from `.env`.
+- Model: `openai` SDK against an OpenAI-compatible endpoint set in `.env`. Default: local Ollama (`qwen3.5:9b`).
+  Hugging Face router works too but the HF account has no Inference credits (402) as of 2026-10-21.
 
 ## How to work with me
 
@@ -39,3 +41,14 @@ Learning how agent harnesses work by building one from scratch, step by step, wi
 ## Tasks
 
 - Plans and progress go in `tasks/todo.md`; lessons from corrections go in `tasks/lessons.md`.
+- Log every design decision in `docs/decisions.md` (date, decision, why, what we passed on), then update the roadmap.
+
+## Artifacts (docs and pages on claude.ai)
+
+- Before creating a new artifact, check this list. If one covers the topic, update it instead; create a new one
+  only when nothing here fits, then add it to this list.
+- These live on claude.ai, not in the repo. Edit them with the Claude Docs tools, never by recreating them.
+
+| Title | Link | What it is | Keep in sync with |
+| --- | --- | --- | --- |
+| Learning Plan: Building a Coding Agent from Scratch | https://claude.ai/artifact/SgbyYzcDNDTU3BXmT6fKyN | Summary of the plan for my lead: diagram, layers table, plain-terms explanation | `docs/roadmap.md`, `docs/decisions.md` |

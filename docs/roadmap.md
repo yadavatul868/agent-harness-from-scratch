@@ -2,18 +2,22 @@
 
 Reference: [langchain-ai/deepagents](https://github.com/langchain-ai/deepagents), cloned (shallow) in
 `references/deepagents/`. In this file `DA/` means `references/deepagents/libs/deepagents/deepagents/`.
+Second reference (Layer 5 sandbox only): [anthropics/sandbox-runtime](https://github.com/anthropics/sandbox-runtime),
+the sandbox Claude Code uses, cloned in `references/sandbox-runtime/`. `SRT/` means `references/sandbox-runtime/src/sandbox/`.
 
 **Approach:** plain Python, no LangChain/LangGraph. We copy deepagents' *design* (middleware, backends,
 the `task` tool, and so on) and names where it helps, and compare with the real code at each layer.
-**Model:** Hugging Face Inference Providers (`HF_TOKEN` in `.env`), using an open model that supports tool calling.
+**Model:** any OpenAI-compatible endpoint via the `openai` SDK, configured in `.env`. We start on local Ollama
+(`qwen3.5:9b`); Hugging Face Inference Providers (`router.huggingface.co/v1`) is a `.env` change away.
 
 **How each step works:** Claude explains what and why → we write a small piece of code together → you ask
 questions / challenge the design → a test or a demo run proves it works → commit. One step ≈ one sitting.
 
 ```
-            8. Assembly: create_deep_agent()
-      7. Skills + memory     6. Context management
-   5. Sub-agents        4. Shell + human approval
+            9. Assembly: create_deep_agent()
+      8. Skills + memory     7. Context management
+   6. Sub-agents        5. Sandbox provider (sandbox-exec)
+            4. Shell + human approval
             3. Filesystem (backends + file tools)
             2. Middleware (hooks + state)
             1. Tools (functions → schemas)
@@ -25,7 +29,7 @@ questions / challenge the design → a test or a demo run proves it works → co
 ## Layer 0: The agent loop
 Goal: the smallest thing that is an "agent": a model in a loop that can use one tool.
 
-- [ ] 0.1 Call the model once from Python (HF client, read `HF_TOKEN` from `.env`)
+- [x] 0.1 Call the model once from Python (`openai` SDK, endpoint + model from `.env`)
 - [ ] 0.2 Messages: system / user / assistant roles; send a short conversation
 - [ ] 0.3 What a "tool" is to a model: a JSON schema (name, description, parameters)
 - [ ] 0.4 Hand-write one tool schema (`add(a, b)`) and send it with the request
@@ -111,76 +115,99 @@ Goal: the agent can run commands, safely.
 - [ ] 4.6 Human-in-the-loop: pause before a tool runs; approve / edit / reject
 - [ ] 4.7 Resuming after a pause (why state must be saveable)
 - [ ] 4.8 Rejected calls: what the model is told
-- [ ] 4.9 Safety discussion: what a real sandbox adds
+- [ ] 4.9 Safety discussion: what approval can't protect against (sets up Layer 5)
 - [ ] 4.10 Demo: agent writes and runs a Python script, asking before each command
 
 Checkpoint: `execute` works, and nothing runs without your OK when approval is on.
-Compare: `DA/backends/local_shell.py`, `DA/backends/sandbox.py`, `DA/middleware/permissions.py`, `DA/middleware/_fs_interrupt.py`.
+Compare: `DA/backends/local_shell.py`, `DA/middleware/permissions.py`, `DA/middleware/_fs_interrupt.py`.
 
-## Layer 5: Sub-agents
+## Layer 5: Sandbox provider
+Goal: commands run inside an OS-enforced sandbox, plugged in the way deepagents' partner integrations
+(Modal, Daytona, Vercel, ...) are. Decisions D2–D4 in `docs/decisions.md`.
+
+- [ ] 5.1 Local vs container vs cloud sandboxes; how deepagents' partner packages plug in
+- [ ] 5.2 `BaseSandbox`: build `ls` / `read` / `write` / `edit` / `glob` / `grep` from `execute()` + `upload_files()` / `download_files()`
+- [ ] 5.3 Test `BaseSandbox` with a plain local subclass: same results as the Layer 3 tools
+- [ ] 5.4 Partner-style package: `partners/seatbelt/` holding one `SeatbeltSandbox(BaseSandbox)` class
+- [ ] 5.5 Seatbelt profile: start from `(deny default)`; allow reads, writes only in the work folder, no network
+- [ ] 5.6 Always-blocked paths: shell startup files, `.git/hooks`, `.git/config` (they run later, outside the sandbox)
+- [ ] 5.7 `SeatbeltSandbox.execute()`: wrap each command in `sandbox-exec`; timeouts; reading "Operation not permitted"
+- [ ] 5.8 `upload_files` / `download_files` for the sandbox's work folder
+- [ ] 5.9 Choose a backend by name (`local`, `seatbelt`)
+- [ ] 5.10 Escape tests that must fail: write outside, reach the network, touch a blocked path
+- [ ] 5.11 Demo: the Layer 4 demo again, sandboxed; the agent code is unchanged, one argument differs
+- [ ] 5.12 *(optional, decide later: D5)* Run `SeatbeltSandbox` under the real deepagents library
+
+Checkpoint: switching `backend="local"` to `"seatbelt"` changes no agent code, and every escape test fails as it should.
+Compare: `DA/backends/sandbox.py` (`BaseSandbox`), `references/deepagents/libs/partners/modal/langchain_modal/sandbox.py`,
+`references/deepagents/libs/code/deepagents_code/integrations/sandbox_factory.py`,
+`SRT/macos-sandbox-utils.ts` (`wrapCommandWithSandboxMacOS`, `generateWriteRules`, `macGetMandatoryDenyEntries`),
+`SRT/sandbox-utils.ts` (`DANGEROUS_FILES`).
+
+## Layer 6: Sub-agents
 Goal: the main agent hands a sub-task to a helper with a clean context.
 
-- [ ] 5.1 Why: context isolation (the helper's messy work doesn't fill the main context)
-- [ ] 5.2 A sub-agent is just another agent: reuse our loop
-- [ ] 5.3 The `task` tool: `description` plus `subagent_type`
-- [ ] 5.4 The tool description lists the available sub-agents
-- [ ] 5.5 Return only the final answer to the parent
-- [ ] 5.6 The default `general-purpose` sub-agent (same tools as the parent)
-- [ ] 5.7 Custom sub-agents: name, description, prompt, tools, model
-- [ ] 5.8 What state is shared vs private (files yes, messages no)
-- [ ] 5.9 Sub-agents get their own middleware stack
-- [ ] 5.10 Running several `task` calls in one turn (parallel)
-- [ ] 5.11 Preventing infinite delegation (depth limits)
-- [ ] 5.12 Demo: researcher sub-agent + writer main agent
+- [ ] 6.1 Why: context isolation (the helper's messy work doesn't fill the main context)
+- [ ] 6.2 A sub-agent is just another agent: reuse our loop
+- [ ] 6.3 The `task` tool: `description` plus `subagent_type`
+- [ ] 6.4 The tool description lists the available sub-agents
+- [ ] 6.5 Return only the final answer to the parent
+- [ ] 6.6 The default `general-purpose` sub-agent (same tools as the parent)
+- [ ] 6.7 Custom sub-agents: name, description, prompt, tools, model
+- [ ] 6.8 What state is shared vs private (files yes, messages no)
+- [ ] 6.9 Sub-agents get their own middleware stack
+- [ ] 6.10 Running several `task` calls in one turn (parallel)
+- [ ] 6.11 Preventing infinite delegation (depth limits)
+- [ ] 6.12 Demo: researcher sub-agent + writer main agent
 
 Checkpoint: the main agent delegates two research tasks and combines the results.
 Compare: `DA/middleware/subagents.py` (`SubAgent`, `TASK_TOOL_DESCRIPTION`, general-purpose spec).
 
-## Layer 6: Context management
+## Layer 7: Context management
 Goal: long tasks don't overflow the model's context window.
 
-- [ ] 6.1 Tokens and context windows; counting tokens (approximate is fine)
-- [ ] 6.2 Watching size: trigger when history passes a fraction of the window
-- [ ] 6.3 Summarization: replace old messages with a summary; keep the recent ones
-- [ ] 6.4 Never split a tool call from its result when cutting history
-- [ ] 6.5 Saving the full old history to a file before summarizing
-- [ ] 6.6 Offloading huge tool outputs to files; give the model a pointer + preview
-- [ ] 6.7 Truncating large old tool-call arguments
-- [ ] 6.8 Patching dangling tool calls (a call with no result breaks the next request)
-- [ ] 6.9 A `compact_conversation` tool the agent can call itself
-- [ ] 6.10 Tests with a tiny fake context window
-- [ ] 6.11 Prompt caching: what it is, why middleware order matters for it
-- [ ] 6.12 Demo: a long task that summarizes itself and keeps going
+- [ ] 7.1 Tokens and context windows; counting tokens (approximate is fine)
+- [ ] 7.2 Watching size: trigger when history passes a fraction of the window
+- [ ] 7.3 Summarization: replace old messages with a summary; keep the recent ones
+- [ ] 7.4 Never split a tool call from its result when cutting history
+- [ ] 7.5 Saving the full old history to a file before summarizing
+- [ ] 7.6 Offloading huge tool outputs to files; give the model a pointer + preview
+- [ ] 7.7 Truncating large old tool-call arguments
+- [ ] 7.8 Patching dangling tool calls (a call with no result breaks the next request)
+- [ ] 7.9 A `compact_conversation` tool the agent can call itself
+- [ ] 7.10 Tests with a tiny fake context window
+- [ ] 7.11 Prompt caching: what it is, why middleware order matters for it
+- [ ] 7.12 Demo: a long task that summarizes itself and keeps going
 
 Checkpoint: a 50-tool-call task completes in a small context window.
 Compare: `DA/middleware/summarization.py` (trigger 0.85 / keep 0.10), `DA/middleware/patch_tool_calls.py`, `DA/middleware/_overflow_clip.py`, `DA/middleware/_blob_offload.py`.
 
-## Layer 7: Skills + memory
+## Layer 8: Skills + memory
 Goal: reusable know-how loaded only when needed, and memory that survives sessions.
 
-- [ ] 7.1 Skills: folders with a `SKILL.md` (YAML frontmatter + instructions)
-- [ ] 7.2 Find and parse skills from a backend
-- [ ] 7.3 Show only skill *names + descriptions* in the prompt ("progressive disclosure")
-- [ ] 7.4 Load the full skill when the agent asks for it
-- [ ] 7.5 `SkillsMiddleware`
-- [ ] 7.6 Memory: `AGENTS.md` files injected into the system prompt
-- [ ] 7.7 The agent updates its own memory file (with `edit_file`)
-- [ ] 7.8 Memory that persists across threads (`StoreBackend` / composite route)
-- [ ] 7.9 `MemoryMiddleware`
-- [ ] 7.10 Demo: teach the agent a preference once; it remembers next session
+- [ ] 8.1 Skills: folders with a `SKILL.md` (YAML frontmatter + instructions)
+- [ ] 8.2 Find and parse skills from a backend
+- [ ] 8.3 Show only skill *names + descriptions* in the prompt ("progressive disclosure")
+- [ ] 8.4 Load the full skill when the agent asks for it
+- [ ] 8.5 `SkillsMiddleware`
+- [ ] 8.6 Memory: `AGENTS.md` files injected into the system prompt
+- [ ] 8.7 The agent updates its own memory file (with `edit_file`)
+- [ ] 8.8 Memory that persists across threads (`StoreBackend` / composite route)
+- [ ] 8.9 `MemoryMiddleware`
+- [ ] 8.10 Demo: teach the agent a preference once; it remembers next session
 
 Checkpoint: skills load on demand; memory survives a restart.
 Compare: `DA/middleware/skills.py`, `DA/middleware/memory.py`.
 
-## Layer 8: Assembly
+## Layer 9: Assembly
 Goal: one function that builds a full deep agent, like the real thing.
 
-- [ ] 8.1 Composing the system prompt (base + user instructions + middleware sections)
-- [ ] 8.2 Default middleware order, and why it's that order
-- [ ] 8.3 `create_deep_agent(model, tools, system_prompt, subagents, backend, skills, memory, ...)`
-- [ ] 8.4 Profiles: small per-model tweaks (tool descriptions, excluded tools)
-- [ ] 8.5 End-to-end demo: a real multi-step task using every layer
-- [ ] 8.6 Retrospective: our version vs deepagents. What LangGraph gives them (checkpoints, streaming) that we skipped
+- [ ] 9.1 Composing the system prompt (base + user instructions + middleware sections)
+- [ ] 9.2 Default middleware order, and why it's that order
+- [ ] 9.3 `create_deep_agent(model, tools, system_prompt, subagents, backend, skills, memory, ...)`
+- [ ] 9.4 Profiles: small per-model tweaks (tool descriptions, excluded tools)
+- [ ] 9.5 End-to-end demo: a real multi-step task using every layer
+- [ ] 9.6 Retrospective: our version vs deepagents. What LangGraph gives them (checkpoints, streaming) that we skipped
 
 Checkpoint: `create_deep_agent()` runs the end-to-end demo.
 Compare: `DA/graph.py` lines ~888–1010 (main middleware stack assembly), `DA/profiles/`.
