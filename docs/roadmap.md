@@ -5,7 +5,8 @@ Reference: [langchain-ai/deepagents](https://github.com/langchain-ai/deepagents)
 
 **Approach:** plain Python, no LangChain/LangGraph. We copy deepagents' *design* (middleware, backends,
 the `task` tool, and so on) and names where it helps, and compare with the real code at each layer.
-**Model:** Hugging Face Inference Providers (`HF_TOKEN` in `.env`), using an open model that supports tool calling.
+**Model:** any OpenAI-compatible endpoint via the `openai` SDK, configured in `.env`. We start on local Ollama
+(`qwen3.5:9b`); Hugging Face Inference Providers (`router.huggingface.co/v1`) is a `.env` change away.
 
 **How each step works:** Claude explains what and why → we write a small piece of code together → you ask
 questions / challenge the design → a test or a demo run proves it works → commit. One step ≈ one sitting.
@@ -25,7 +26,7 @@ questions / challenge the design → a test or a demo run proves it works → co
 ## Layer 0: The agent loop
 Goal: the smallest thing that is an "agent": a model in a loop that can use one tool.
 
-- [ ] 0.1 Call the model once from Python (HF client, read `HF_TOKEN` from `.env`)
+- [x] 0.1 Call the model once from Python (`openai` SDK, endpoint + model from `.env`)
 - [ ] 0.2 Messages: system / user / assistant roles; send a short conversation
 - [ ] 0.3 What a "tool" is to a model: a JSON schema (name, description, parameters)
 - [ ] 0.4 Hand-write one tool schema (`add(a, b)`) and send it with the request

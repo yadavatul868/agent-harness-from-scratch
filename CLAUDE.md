@@ -13,7 +13,8 @@ Learning how agent harnesses work by building one from scratch, step by step, wi
 - Reference repo: deepagents, cloned read-only in `references/deepagents/` (gitignored). Never edit it.
 - The step plan is `docs/roadmap.md` (9 layers, 100 steps). Work one step at a time, tick it off when done,
   and show the matching deepagents file for comparison. Build in plain Python (no LangChain/LangGraph).
-- Model: Hugging Face Inference Providers using `HF_TOKEN` from `.env`.
+- Model: `openai` SDK against an OpenAI-compatible endpoint set in `.env`. Default: local Ollama (`qwen3.5:9b`).
+  Hugging Face router works too but the HF account has no Inference credits (402) as of 2026-10-21.
 
 ## How to work with me
 

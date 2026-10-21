@@ -7,7 +7,10 @@ authors = [
     { name = "Atul Yadav", email = "yadavatul868@gmail.com" }
 ]
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "openai>=3.35.1",
+    "python-dotenv>=1.2.4",
+]
 
 [project.scripts]
 agent-harness-from-scratch = "agent_harness_from_scratch:main"
@@ -21,3 +24,6 @@ dev = [
     "pytest>=9.1.1",
     "ruff>=0.16.10",
 ]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
